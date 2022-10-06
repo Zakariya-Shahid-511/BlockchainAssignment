@@ -12,6 +12,7 @@ import (
 
 var noOfBlocks = 0
 var root string
+var tail string
 
 type Block struct {
 	no            int
@@ -42,12 +43,13 @@ func NewBlock(blockchain []Block) *Block {
 
 	hashString := blocktoString(block)
 	block.hash = CalculateHash(hashString)
-
+	tail = block.hash
 	if noOfBlocks == 0 {
 		block.previous_hash = ""
 		root = block.hash
 	} else {
 		block.previous_hash = blockchain[noOfBlocks-1].hash
+
 	}
 
 	return block
@@ -82,6 +84,7 @@ func changeBlock(flag int, block *Block) Block {
 		block.transactions = append(block.transactions, transaction)
 		newString = blocktoString(block)
 		block.hash = CalculateHash(newString)
+		fmt.Println("\nTransaction added!")
 		break
 	case 1:
 		var newString string
@@ -90,6 +93,7 @@ func changeBlock(flag int, block *Block) Block {
 		block.nonce = v
 		newString = blocktoString(block)
 		block.hash = CalculateHash(newString)
+		fmt.Println("\nNonce changed!.")
 		break
 	default:
 		fmt.Println("Invalid input!")
@@ -109,7 +113,6 @@ func ListBlocks(blockchain []Block) {
 		fmt.Println("\n\t Hash : ", blockchain[i].hash)
 		fmt.Println("\n\tPrevious Hash : ", blockchain[i].previous_hash)
 		fmt.Println("\n\tTransactions : ")
-		fmt.Println(len(blockchain[i].transactions))
 		for j := 0; j < len(blockchain[i].transactions); j++ {
 
 			fmt.Printf("\t\tNo.	%d\t", j+1)
@@ -123,27 +126,31 @@ func ListBlocks(blockchain []Block) {
 func verifyBlockchain(blockchain []Block) int {
 	length := len(blockchain)
 	count := 0
-	errorBlock := 0
 
-	for i := length - 1; i > 0; i-- {
+	for i := length - 1; i >= 0; i-- {
 		if i == 0 {
-			if blockchain[i].previous_hash == root {
+			if blockchain[i].hash == root {
 				count++
+			} else {
+				fmt.Printf("Block %d changed!", i+1)
+				return 0
 			}
-		}
-		if blockchain[i].previous_hash == blockchain[i-1].hash {
+		} else if i == length-1 {
+			if blockchain[i].hash == tail {
+				count++
+			} else {
+				fmt.Printf("Block %d changed!", i+1)
+				return 0
+			}
+		} else if blockchain[i].previous_hash == blockchain[i-1].hash {
 			count++
 		} else {
-			errorBlock = i - 1
+			fmt.Printf("Block %d changed!", i+1)
+			return 0
 		}
 	}
 
-	if count == length {
-		return 1
-	} else {
-		return errorBlock
-	}
-
+	return 1
 }
 
 func menu() {
@@ -192,7 +199,7 @@ func main() {
 			var bno int
 			fmt.Print("Enter block number you want to change : ")
 			fmt.Scan(&bno)
-			for (bno > noOfBlocks-1) || (bno < 1) {
+			for (bno > noOfBlocks) || (bno < 1) {
 				fmt.Println("Invalid input!\n")
 				fmt.Print("Enter block number you want to change : ")
 				fmt.Scan(&bno)
@@ -208,8 +215,6 @@ func main() {
 			check = verifyBlockchain(blockchain)
 			if check == 1 {
 				fmt.Println("Blockchain verified.")
-			} else {
-				fmt.Printf("Block %d changed!", check+1)
 			}
 		default:
 			fmt.Println("Invalid Input.\n")
